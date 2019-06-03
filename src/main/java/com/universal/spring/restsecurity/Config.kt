@@ -41,10 +41,13 @@ class CachingConfig {
 
         return cacheManager;
     }
+
+    //TODO token should associate with more information, like expire
+    @Bean
+    fun tokenCache(): MutableMap<String, String> = HashMap()
+
 }
 
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
 //class WebSecurityConfig: WebMvcConfigurer {
 
 //    @Bean
@@ -56,53 +59,73 @@ class CachingConfig {
 //    }
 //}
 
-class SecurityConfig : WebSecurityConfigurerAdapter() {
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+class SecurityConfig(
+        private val tokenCache: MutableMap<String, String>
+) : WebSecurityConfigurerAdapter() {
 
 //    @Throws(Exception::class)
 //    public override fun configure(auth: AuthenticationManagerBuilder) {
 //        auth.userDetailsService<UserDetailsService>(this.participantService).passwordEncoder(this.passwordEncoder())
 //    }
 
-    @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
 
         //Implementing Token based authentication in this filter
-        val tokenFilter = TokenAuthenticationFilter()
+        val tokenFilter = TokenAuthenticationFilter(tokenCache)
         http.addFilterBefore(tokenFilter, BasicAuthenticationFilter::class.java)
 
 //        //Creating token when basic authentication is successful and the same token can be used to authenticate for further requests
 //        val customBasicAuthFilter = CustomBasicAuthenticationFilter(this.authenticationManager())
 //        http.addFilter(customBasicAuthFilter)
 
-        http.csrf().and()
-                .cors().and()
-                .antMatcher("/token").anonymous()
+        http
+//                .httpBasic().and() // disable BASIC authentication 'cuz we want force client use token
+                .authorizeRequests()
+                .antMatchers("/token").permitAll()
+//                .antMatchers("/login").permitAll()
+                .anyRequest().authenticated()
+
+                .and().logout()
+
+                .and().csrf().disable() // POST method of '/token' with curl will failed when CSRF enabled
+//                .and().cors()
     }
 }
 
 
-class TokenAuthenticationFilter : GenericFilterBean() {
+class TokenAuthenticationFilter(
+        private val tokenCache: MutableMap<String, String>
+) : GenericFilterBean() {
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
         val httpRequest = request as HttpServletRequest
 
         //extract token from header
-        val accessToken = httpRequest.getHeader("Authorization")
+        var accessToken: String? = httpRequest.getHeader("Authorization")
+
+        // support with or without 'Bearer ' prefix
+        accessToken = accessToken?.removePrefix("Bearer ")
 
         if (null != accessToken) {
             //get and check whether token is valid ( from DB or file wherever you are storing the token)
 
-            //Populate SecurityContextHolder by fetching relevant information using token
-            val user = org.springframework.security.core.userdetails.User(
-                    "username",
-                    "password",
-                    true,
-                    true,
-                    true,
-                    true,
-                    null)
+            val name = tokenCache[accessToken]
+            if (name != null) {
+                //TODO should retrieve UserDetails from JDBC or something
+                //Populate SecurityContextHolder by fetching relevant information using token
+                val user = org.springframework.security.core.userdetails.User(
+                        name,
+                        "password",
+                        true,
+                        true,
+                        true,
+                        true,
+                        listOf())
 
-            val authentication = UsernamePasswordAuthenticationToken(user, null, user.authorities)
-            SecurityContextHolder.getContext().authentication = authentication
+                val authentication = UsernamePasswordAuthenticationToken(user, null, user.authorities)
+                SecurityContextHolder.getContext().authentication = authentication
+            }
         }
 
         chain.doFilter(request, response)
