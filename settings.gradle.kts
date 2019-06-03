@@ -3,4 +3,5 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
-rootProject.name = "rest-security"
+
+rootProject.name = "spring-security-rest"

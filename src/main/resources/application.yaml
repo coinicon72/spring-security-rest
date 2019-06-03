@@ -17,8 +17,13 @@ spring:
         dialect: org.hibernate.dialect.MySQL57Dialect
 
   datasource:
-#    url:      jdbc:mysql://192.168.1.168/commdb?autoReconnect=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
-    url:      jdbc:mysql://dev.yifenganxin.com/commdb?autoReconnect=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
+    url:      jdbc:mysql://192.168.1.168/commdb?autoReconnect=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
+#    url:      jdbc:mysql://dev.yifenganxin.com/commdb?autoReconnect=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
     username: yfap
     password: rES5TeTDtkOMP9Cs
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+app:
+  token:
+#    length: 8    # token string length, default: 16
+    expire: 300  # token expire in xxx seconds, default: 3600

@@ -43,7 +43,7 @@ data class User(
 ) : UserDetails {
 
     @JsonIgnore
-    override fun getUsername(): String = name
+    override fun getUsername(): String = email
 
     @JsonIgnore
     override fun getPassword(): String = pwd
@@ -70,5 +70,5 @@ data class User(
 
 
 interface UserRepo : JpaRepository<User, Int> {
-    fun findByName(name: String?): User?
+    fun findByEmail(email: String): User?
 }
